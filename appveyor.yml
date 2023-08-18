@@ -17,7 +17,7 @@ install:
 build_script:
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake -DCURL_LIBRARY:FILEPATH="%CURL_DIR%\lib\libcurl.lib" -DCURL_INCLUDE_DIR:PATH="%CURL_DIR%\include" ..
   - cmake --build .
 
 test_script:
