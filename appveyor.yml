@@ -1,13 +1,18 @@
-platform: x64
-
-# Les configurations spécifiques à Windows que vous pourriez nécessiter
 environment:
   matrix:
-    - configuration: Release
+    - APPVEYOR_BUILD_SYSTEM: Visual Studio 2019
+    - APPVEYOR_BUILD_SYSTEM: mingw
 
 install:
-  - choco install cmake
-  - export PATH="/c/Program Files/CMake/bin:$PATH"
+  - if %APPVEYOR_BUILD_SYSTEM% == Visual Studio 2019 (
+      choco install visualstudio2019buildtools --package-parameters "--includeRecommended" -y
+    )
+  - if %APPVEYOR_BUILD_SYSTEM% == mingw (
+      choco install mingw -y
+    )
+  - set CURL_DIR=C:\tools\mingw64
+  - set PATH=%CURL_DIR%\bin;%PATH%
+  - cmake --version
 
 build_script:
   - mkdir build
@@ -15,8 +20,5 @@ build_script:
   - cmake ..
   - cmake --build .
 
-# Les étapes de test que vous pourriez nécessiter
 test_script:
-  - ctest -C Release
-
-# Vous pouvez ajouter d'autres étapes comme le déploiement si nécessaire
+  - ctest -C Debug --output-on-failure
