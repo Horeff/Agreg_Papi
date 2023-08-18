@@ -1,0 +1,22 @@
+platform: x64
+
+# Les configurations spécifiques à Windows que vous pourriez nécessiter
+environment:
+  matrix:
+    - configuration: Release
+
+install:
+  - choco install cmake
+  - export PATH="/c/Program Files/CMake/bin:$PATH"
+
+build_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - cmake --build .
+
+# Les étapes de test que vous pourriez nécessiter
+test_script:
+  - ctest -C Release
+
+# Vous pouvez ajouter d'autres étapes comme le déploiement si nécessaire
