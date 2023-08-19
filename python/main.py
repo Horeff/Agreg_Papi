@@ -11,12 +11,12 @@ except ImportError:
     import requests
 
 try:
-    from bs4 import BeautifulSoup
+    import xml.etree.ElementTree as ET
 except ImportError:
     print("La bibliothèque 'bs4' est manquante. Installation en cours...")
     subprocess.call([sys.executable, "-m", "pip", "install", "beautifulsoup4"])
     print("Bibliothèque 'bs4' installée avec succès!")
-    from bs4 import BeautifulSoup
+    import xml.etree.ElementTree as ET
 
 try:
     import webbrowser
@@ -26,25 +26,34 @@ except ImportError:
     print("Bibliothèque 'webbrowser' installée avec succès!")
     import webbrowser
 
-Path = sys.argv[0].split('/')
-Path = "/".join(Path[:-1])
+if platform.system() == "Windows":
+    Path = str(sys.argv[0])
+    Path = Path.split('\\')
+    Path = "/".join(Path[:-1])
+else:
+    Path = sys.argv[0].split('/')
+    Path = "/".join(Path[:-1])
+
+print("Executé : ", Path, "sur : ", platform.system())
 
 if platform.system() == 'Windows':
-    #try:
-    #    from win10toast_click import ToastNotifier
-    #except ImportError:
-    #    print("La bibliothèque 'win10toast_click' est manquante. Installation en cours...")
-    #    subprocess.call([sys.executable, "-m", "pip", "install", "win10toast-click"])
-    #    print("Bibliothèque 'win10toast_click' installée avec succès!")
-    #    from win10toast_click import ToastNotifier
+    try:
+        from win10toast_click import ToastNotifier
+    except ImportError:
+        print("La bibliothèque 'win10toast_click' est manquante. Installation en cours...")
+        subprocess.call([sys.executable, "-m", "pip", "install", "win10toast-click"])
+        print("Bibliothèque 'win10toast_click' installée avec succès!")
+        from win10toast_click import ToastNotifier
 
     def open_LaChamp():
-        webbrowser.open("https://lachampagneviticole.fr/le-magazin")
+        webbrowser.open("https://lachampagneviticole.fr/le-magazine/")
 
-    #def send_notification(title, message, icon_path):
-    #    toaster = ToastNotifier()
-    #    toaster.show_toast(title, message, icon_path=icon_path, callback_on_click = open_LaChamp)
-    pass
+    def send_notification(title, message, icon_path):
+        try:
+            toaster = ToastNotifier()
+            toaster.show_toast(title, message, icon_path=icon_path, callback_on_click=open_LaChamp)
+        except Exception as e:
+            print("Erreur lors de l'affichage de la notification:", e)
 
 elif platform.system() == 'Darwin':
     try:
@@ -63,22 +72,19 @@ else:
         print(f"Notifications not supported on {platform.system()}")
 
 def lire_rss(path):
-    with open(path, 'r') as file:
-        rssContent = file.read()
-
     resultat = []
 
-    soup = BeautifulSoup(rssContent)  # Utilisez 'xml' comme analyseur
+    tree = ET.parse(path)
+    root = tree.getroot()
 
-    channel_title = soup.find('title').text
-    channel_link = soup.find('link').text
+    channel_title = root.find(".//channel/title").text
+    channel_link = root.find(".//channel/link").text
     print("Titre du canal :", channel_title)
     print("Lien du canal :", channel_link)
 
-    items = soup.find_all('item')
-    for item in items:
-        item_title = item.find('title').text
-        item_link = item.find('link').text
+    for item in root.findall(".//item"):
+        item_title = item.find("title").text
+        item_link = item.find("link").text
         print("Titre de l'article :", item_title)
         print("Lien de l'article :", item_link)
         resultat.append(item_title + "~" + item_link)
@@ -101,15 +107,15 @@ def rec_RSS(outputPath):
 
 def get_logs(path):
     try:
-        with open(path+"/log_rss", "r") as file:
+        with open(path+"/log_rss", "r", encoding='utf-8') as file:
             contenu = file.read()
         return contenu.split("\n")
     except:
         return []
 
 def dump_log(path, contenu):
-    with open(path+"/log_rss", "w") as file:
-        file.write(str(contenu))
+    with open(path+"/log_rss", "w", encoding='utf-8') as file:
+        file.write(contenu)
 
 def diff_listes(A, B, arg = True):
     if len(A) != len(B):
@@ -142,14 +148,12 @@ def main():
     rec_RSS(Path)
     resultat = lire_rss(Path+"/flux_rss.xml")
     log_cont = get_logs(Path)
-
+    dump_log(Path, "\n".join(resultat))
     if len(resultat) != len(log_cont) or diff_listes(resultat, log_cont, True):
         nb = diff_listes(resultat, log_cont, False)
         if nb == 1:
             notif("Il y a " + str(nb) + " nouvel article")
         else:
             notif("Il y a " + str(nb) + " nouveaux articles")
-
-    dump_log(Path, "\n".join(resultat))
 
 main()
