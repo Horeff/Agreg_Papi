@@ -38,22 +38,16 @@ print("Executé : ", Path, "sur : ", platform.system())
 
 if platform.system() == 'Windows':
     try:
-        from win10toast_click import ToastNotifier
+        from winotify import Notification  # No need to catch ImportError since we're using 'winotify'
     except ImportError:
-        print("La bibliothèque 'win10toast_click' est manquante. Installation en cours...")
-        subprocess.call([sys.executable, "-m", "pip", "install", "win10toast-click"])
-        print("Bibliothèque 'win10toast_click' installée avec succès!")
-        from win10toast_click import ToastNotifier
-
-    def open_LaChamp():
-        webbrowser.open("https://lachampagneviticole.fr/le-magazine/")
+        print("La bibliothèque 'winotify' est manquante. Installation en cours...")
+        subprocess.call([sys.executable, "-m", "pip", "install", "winotify"])
+        print("Bibliothèque 'winotify' installée avec succès!")
+        from winotify import Notification
 
     def send_notification(title, message, icon_path):
-        try:
-            toaster = ToastNotifier()
-            toaster.show_toast(title, message, icon_path=icon_path, callback_on_click=open_LaChamp)
-        except Exception as e:
-            print("Erreur lors de l'affichage de la notification:", e)
+        notification = Notification(title, message, icon=icon_path, launch="https://lachampagneviticole.fr/le-magazine/")
+        notification.show()
 
 elif platform.system() == 'Darwin':
     try:
